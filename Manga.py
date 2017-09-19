@@ -1,26 +1,19 @@
-import requests
-import bs4
+import Constants
+from Souper import get_soup_from_url
+from Chapter import Chapter
 
 class Manga:
     def __init__(self, url):
         self.url = url
-        self.chapter_dict = self.get_all_chapter_urls()
+        self._process_page()
 
-    def get_soup_from_url(self, url):
-        try:
-            res = requests.get(url)
-            soup = bs4.BeautifulSoup(res.text, 'html.parser')
-            return soup
-        except:
-            message = 'Couldn\'t get soup for this url: %s' % url
-            raise
-
-    def get_all_chapter_urls(self):
-        soup = self.get_soup_from_url(self.url)
-        chapters = soup.find_all('a', class_="list-group-item")
-        chapter_dict = {}
-        for chapter in chapters:
-            chapter_num = float(chapter.get('chapter'))
-            chapter_url = chapter.get("href")
-            chapter_dict[chapter_num] = chapter_url
-        return chapter_dict
+    def _process_page(self):
+        soup = get_soup_from_url(self.url)
+        chapter_soups = soup.find_all('a', class_="list-group-item")
+        chapters = []
+        for chapter_soup in chapter_soups:
+            chapter_num = float(chapter_soup.get('chapter'))
+            chapter = Chapter(chapter_num, Constants.DOMAIN_URL + chapter_soup.get("href"))
+            chapters.append(chapter)
+        chapters.sort(key=lambda x: x.chapter_num)
+        self.chapters = chapters
